@@ -1,27 +1,76 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Chat Firebase</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <meta charset="UTF-8" />
+  <title>Chat Online com Firebase</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f0f0f0;
+    }
+    #online-users {
+      margin-bottom: 10px;
+    }
+    #chat {
+      border: 1px solid #ccc;
+      background: white;
+      height: 300px;
+      overflow-y: auto;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .message {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+    }
+    .message img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .message strong {
+      margin-right: 6px;
+    }
+    #form-chat {
+      display: flex;
+      gap: 8px;
+    }
+    #message-input {
+      flex: 1;
+      padding: 8px;
+      font-size: 16px;
+    }
+    #send-btn {
+      padding: 8px 16px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 <body>
 
-  <div>
-    <div id="usersOnline">Usuários online: 0</div>
-  </div>
+  <h2>Usuários online: <span id="online-count">0</span></h2>
+  
+  <div id="chat"></div>
+  
+  <form id="form-chat">
+    <input type="text" id="username" placeholder="Seu nome" required />
+    <input type="text" id="message-input" placeholder="Digite sua mensagem" required autocomplete="off" />
+    <button type="submit" id="send-btn">Enviar</button>
+  </form>
 
-  <div id="messages"></div>
-
-  <input type="text" id="msgInput" placeholder="Digite sua mensagem" />
-  <button id="sendBtn">Enviar</button>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <script>
-    // Config Firebase - seu config correto aqui!
+    // Configuração do Firebase (substitua com a sua)
     const firebaseConfig = {
       apiKey: "AIzaSyCL8S1BlDqcfBeRk6dJtd-ukDC0uwtHogo",
       authDomain: "chat-9e78e.firebaseapp.com",
-      databaseURL: "https://chat-9e78e-default-rtdb.firebaseio.com",
+      databaseURL: "https://chat-9e78e-default-rtdb.firebaseio.com/",
       projectId: "chat-9e78e",
       storageBucket: "chat-9e78e.appspot.com",
       messagingSenderId: "1087471527921",
@@ -29,69 +78,99 @@
       measurementId: "G-V54VKM906H"
     };
 
-    // Initialize Firebase
+    // Inicializar Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Pede nome do usuário e guarda id no localStorage
-    let username = localStorage.getItem('username');
-    if (!username) {
-      username = prompt('Qual seu nome?');
-      if (!username) username = 'Anon';
-      localStorage.setItem('username', username);
+    // Referências do Realtime Database
+    const messagesRef = db.ref('messages');
+    const onlineRef = db.ref('onlineUsers');
+
+    // Elementos DOM
+    const chatEl = document.getElementById('chat');
+    const onlineCountEl = document.getElementById('online-count');
+    const formChat = document.getElementById('form-chat');
+    const usernameInput = document.getElementById('username');
+    const messageInput = document.getElementById('message-input');
+
+    // Identificador único para o usuário na sessão
+    const userId = Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+    // Função para atualizar usuários online
+    function updateOnlineUsers(count) {
+      onlineCountEl.textContent = count;
     }
 
-    // Gera um userId único e salva no localStorage para controlar presença
-    let userId = localStorage.getItem('userId');
-    if (!userId) {
-      userId = Date.now().toString() + Math.floor(Math.random() * 1000);
-      localStorage.setItem('userId', userId);
+    // Registrar usuário online
+    function userOnline(name) {
+      onlineRef.child(userId).set(name);
+      onlineRef.child(userId).onDisconnect().remove(); // Remove ao desconectar
     }
 
-    // Marca usuário como online no DB
-    const userRef = db.ref('users/' + userId);
-    userRef.set({ username: username, online: true });
-    userRef.onDisconnect().remove();
-
-    // Escuta usuários online e atualiza contador
-    db.ref('users').on('value', snapshot => {
+    // Monitorar usuários online
+    onlineRef.on('value', snapshot => {
       const users = snapshot.val() || {};
-      const onlineUsers = Object.values(users).filter(u => u.online).length;
-      document.getElementById('usersOnline').innerText = 'Usuários online: ' + onlineUsers;
+      const count = Object.keys(users).length;
+      updateOnlineUsers(count);
     });
 
-    // Função para mostrar mensagens na tela
-    function showMessages(messages) {
-      const div = document.getElementById('messages');
-      div.innerHTML = '';
-      for (const key in messages) {
-        const msg = messages[key];
-        const p = document.createElement('p');
-        p.textContent = `${msg.username}: ${msg.text}`;
-        div.appendChild(p);
-      }
-      div.scrollTop = div.scrollHeight;
-    }
+    // Mostrar mensagens no chat
+    messagesRef.on('child_added', snapshot => {
+      const msg = snapshot.val();
+      const div = document.createElement('div');
+      div.classList.add('message');
 
-    // Escuta mensagens no DB
-    db.ref('messages').on('value', snapshot => {
-      const messages = snapshot.val() || {};
-      showMessages(messages);
+      // Foto simples com inicial do usuário
+      const avatar = document.createElement('div');
+      avatar.textContent = msg.username.charAt(0).toUpperCase();
+      avatar.style.cssText = `
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: #007bff;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 8px;
+        font-weight: bold;
+        font-size: 18px;
+      `;
+
+      // Criar conteúdo da mensagem
+      const strong = document.createElement('strong');
+      strong.textContent = msg.username + ':';
+
+      const span = document.createElement('span');
+      span.textContent = ' ' + msg.text;
+
+      div.appendChild(avatar);
+      div.appendChild(strong);
+      div.appendChild(span);
+
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
     });
 
-    // Envia mensagem ao clicar no botão
-    document.getElementById('sendBtn').onclick = () => {
-      const input = document.getElementById('msgInput');
-      const text = input.value.trim();
-      if (!text) return;
-      const newMsgRef = db.ref('messages').push();
-      newMsgRef.set({
+    // Enviar mensagem
+    formChat.addEventListener('submit', e => {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const message = messageInput.value.trim();
+      if (!username || !message) return;
+
+      // Salvar usuário online
+      userOnline(username);
+
+      // Salvar mensagem no banco
+      messagesRef.push({
         username: username,
-        text: text,
+        text: message,
         timestamp: Date.now()
       });
-      input.value = '';
-    };
+
+      messageInput.value = '';
+      messageInput.focus();
+    });
 
   </script>
 
