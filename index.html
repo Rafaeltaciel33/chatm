@@ -1,760 +1,185 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Chat Completo Firebase - Painel Admin</title>
+<title>Chat Firebase Simples</title>
 <style>
-  * {
-    box-sizing: border-box;
-  }
-  body {
-    margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  #app-container {
-    background: white;
-    border-radius: 12px;
-    width: 400px;
-    height: 700px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    overflow: hidden;
-  }
-  #header {
-    background: #4a90e2;
-    color: white;
-    padding: 16px;
-    font-weight: 700;
-    font-size: 1.4rem;
-    text-align: center;
-    user-select: none;
-  }
-  #login-panel, #chat-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  #login-panel {
-    padding: 20px;
-  }
-  label {
-    font-weight: 600;
-    margin-bottom: 4px;
-    display: block;
-  }
-  input[type="text"], select {
-    width: 100%;
-    padding: 10px 14px;
-    font-size: 1rem;
-    margin-bottom: 16px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-    outline: none;
-    transition: border-color 0.3s ease;
-  }
-  input[type="text"]:focus, select:focus {
-    border-color: #4a90e2;
-  }
-  button {
-    padding: 12px 16px;
-    font-weight: 700;
-    background: #4a90e2;
-    border: none;
-    color: white;
-    border-radius: 20px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  button:hover {
-    background: #357abd;
-  }
-  #chat-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  #messages {
-    flex: 1;
-    padding: 12px 16px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: #f9fbff;
-  }
-  .message {
-    max-width: 70%;
-    padding: 10px 16px;
-    border-radius: 18px;
-    font-size: 0.9rem;
-    line-height: 1.3;
-    word-wrap: break-word;
-    position: relative;
-  }
-  .message.self {
-    background: #4a90e2;
-    color: white;
-    align-self: flex-end;
-    border-bottom-left-radius: 18px;
-    border-bottom-right-radius: 4px;
-  }
-  .message.other {
-    background: #e1e8f7;
-    color: #222;
-    align-self: flex-start;
-    border-bottom-right-radius: 18px;
-    border-bottom-left-radius: 4px;
-  }
-  .message .username {
-    font-weight: 700;
-    font-size: 0.8rem;
-    opacity: 0.7;
-    margin-bottom: 4px;
-  }
-  .message img {
-    max-width: 100%;
-    border-radius: 12px;
-    cursor: pointer;
-  }
-  #form {
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    background: #fff;
-    border-top: 1px solid #ddd;
-    gap: 10px;
-  }
-  #input-message {
-    flex: 1;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 16px;
-    font-size: 1rem;
-    outline: none;
-    box-shadow: inset 0 0 5px #ccc;
-    transition: box-shadow 0.2s ease;
-  }
-  #input-message:focus {
-    box-shadow: inset 0 0 7px #4a90e2;
-  }
-  #send-btn {
-    background: #4a90e2;
-    border: none;
-    color: white;
-    font-weight: 700;
-    font-size: 1rem;
-    border-radius: 20px;
-    padding: 0 20px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  #send-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  #users-list {
-    border-left: 1px solid #ddd;
-    width: 120px;
-    background: #f1f5fc;
-    overflow-y: auto;
-    padding: 8px 4px;
-    font-size: 0.9rem;
-    display: flex;
-    flex-direction: column;
-  }
-  #users-list h3 {
-    margin: 4px 8px;
-    font-weight: 700;
-    color: #4a90e2;
-    text-align: center;
-  }
-  .user-item {
-    padding: 6px 8px;
-    border-radius: 12px;
-    margin: 4px 8px;
-    background: white;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    user-select: none;
-  }
-  .user-item:hover {
-    background: #dbe6fd;
-  }
-  .user-item.banned {
-    color: #b03232;
-    font-style: italic;
-  }
-  .user-item.self {
-    font-weight: 700;
-    border: 2px solid #4a90e2;
-  }
-  #admin-panel {
-    border-top: 1px solid #ddd;
-    background: #f9fbff;
-    padding: 10px;
-    font-size: 0.85rem;
-  }
-  #admin-panel h4 {
-    margin: 0 0 8px 0;
-    color: #4a90e2;
-  }
-  .ban-btn {
-    background: #b03232;
-    border: none;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    cursor: pointer;
-    margin-left: 6px;
-    font-size: 0.8rem;
-    transition: background-color 0.3s ease;
-  }
-  .ban-btn:hover {
-    background: #7a201f;
-  }
-  .unban-btn {
-    background: #2e7d32;
-    border: none;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    cursor: pointer;
-    margin-left: 6px;
-    font-size: 0.8rem;
-    transition: background-color 0.3s ease;
-  }
-  .unban-btn:hover {
-    background: #1b4d1b;
-  }
-  #chat-main {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-  #private-chat-header {
-    background: #357abd;
-    color: white;
-    padding: 6px 10px;
-    text-align: center;
-    font-weight: 700;
-  }
-  #private-chat {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  #private-messages {
-    flex: 1;
-    padding: 12px 16px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: #fff8e1;
-  }
-  #private-form {
-    display: flex;
-    align-items: center;
-    padding: 10px 16px;
-    background: #fff;
-    border-top: 1px solid #ddd;
-    gap: 10px;
-  }
-  #input-private-message {
-    flex: 1;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 16px;
-    font-size: 1rem;
-    outline: none;
-    box-shadow: inset 0 0 5px #ccc;
-    transition: box-shadow 0.2s ease;
-  }
-  #input-private-message:focus {
-    box-shadow: inset 0 0 7px #357abd;
-  }
-  #send-private-btn {
-    background: #357abd;
-    border: none;
-    color: white;
-    font-weight: 700;
-    font-size: 1rem;
-    border-radius: 20px;
-    padding: 0 20px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-  }
-  #send-private-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  #file-button, #file-private-button {
-    background: transparent;
-    border: none;
-    color: #4a90e2;
-    font-size: 1.2rem;
-    cursor: pointer;
-    user-select: none;
-  }
-  #file-button:hover, #file-private-button:hover {
-    color: #357abd;
-  }
-  /* Scrollbar styling */
-  #messages::-webkit-scrollbar,
-  #private-messages::-webkit-scrollbar,
-  #users-list::-webkit-scrollbar {
-    width: 8px;
-  }
-  #messages::-webkit-scrollbar-thumb,
-  #private-messages::-webkit-scrollbar-thumb,
-  #users-list::-webkit-scrollbar-thumb {
-    background: #b0caff;
-    border-radius: 10px;
-  }
-  #messages::-webkit-scrollbar-track,
-  #private-messages::-webkit-scrollbar-track,
-  #users-list::-webkit-scrollbar-track {
-    background: #f0f5ff;
-  }
+  body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+  #loginArea, #chatArea { max-width: 500px; margin: auto; padding: 10px; background: white; border-radius: 8px; }
+  #chatArea { display: none; }
+  #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background: #fff; }
+  .message { margin-bottom: 10px; }
+  .message strong { color: #007BFF; }
+  .online-users { margin-bottom: 15px; font-size: 0.9em; color: green; }
+  img { max-width: 150px; border-radius: 6px; }
 </style>
 </head>
 <body>
-  <div id="app-container">
-    <div id="header">Chat Completo Firebase</div>
 
-    <div id="login-panel">
-      <label for="username">Seu nome de usuário:</label>
-      <input type="text" id="username" maxlength="20" autocomplete="off" placeholder="Digite seu nome" />
-      <label for="user-role">Selecionar função:</label>
-      <select id="user-role">
-        <option value="user" selected>Usuário</option>
-        <option value="moderator">Moderador</option>
-      </select>
-      <button id="btn-login">Entrar no Chat</button>
-    </div>
+<div id="loginArea">
+  <h2>Login</h2>
+  <input type="text" id="usernameInput" placeholder="Seu nome" />
+  <button id="btnLogin">Entrar</button>
+</div>
 
-    <div id="chat-panel" style="display:none; flex-direction: column; height: 100%;">
-      <div id="chat-main">
-        <div style="flex:1; display:flex; flex-direction: column;">
-          <div id="messages"></div>
-          <form id="form" autocomplete="off">
-            <button type="button" id="file-button" title="Enviar foto 📷" aria-label="Enviar foto">&#128247;</button>
-            <input type="file" id="file-input" accept="image/*" style="display:none" />
-            <input type="text" id="input-message" placeholder="Escreva sua mensagem..." maxlength="300" />
-            <button id="send-btn" disabled>Enviar</button>
-          </form>
-        </div>
-        <div id="users-list">
-          <h3>Usuários</h3>
-          <!-- Lista dinâmica de usuários -->
-        </div>
-      </div>
+<div id="chatArea">
+  <h2>Chat Firebase</h2>
+  <div class="online-users" id="usersOnline">Usuários online: 0</div>
 
-      <div id="private-chat" style="display:none; flex-direction: column; height:200px;">
-        <div id="private-chat-header">Chat privado com <span id="private-chat-username"></span></div>
-        <div id="private-messages"></div>
-        <form id="private-form" autocomplete="off">
-          <button type="button" id="file-private-button" title="Enviar foto 📷" aria-label="Enviar foto">&#128247;</button>
-          <input type="file" id="file-private-input" accept="image/*" style="display:none" />
-          <input type="text" id="input-private-message" placeholder="Escreva mensagem privada..." maxlength="300" />
-          <button id="send-private-btn" disabled>Enviar</button>
-        </form>
-      </div>
+  <div id="messages"></div>
 
-      <div id="admin-panel" style="display:none;">
-        <h4>Painel Administrativo - Moderadores</h4>
-        <div id="admin-users-list"></div>
-      </div>
+  <input type="text" id="messageInput" placeholder="Digite sua mensagem" />
+  <input type="file" id="imageInput" accept="image/*" />
+  <button id="btnSend">Enviar</button>
 
-    </div>
-  </div>
+  <button id="btnLogout">Sair</button>
+</div>
 
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
+
 <script>
-  // Coloque aqui as configurações do seu projeto Firebase
+  // Config Firebase
   const firebaseConfig = {
-    apiKey: "AIzaSyXXXXX-XXXXXX-XXXXXX-XXXXXXXXXX",
-    authDomain: "seu-projeto.firebaseapp.com",
-    databaseURL: "https://seu-projeto-default-rtdb.firebaseio.com",
-    projectId: "seu-projeto",
-    storageBucket: "seu-projeto.appspot.com",
-    messagingSenderId: "1234567890",
-    appId: "1:1234567890:web:abcdefghijk"
+    apiKey: "AIzaSyCL8S1BlDqcfBeRk6dJtd-ukDC0uwtHogo",
+    authDomain: "chat-9e78e.firebaseapp.com",
+    projectId: "chat-9e78e",
+    storageBucket: "chat-9e78e.appspot.com",
+    messagingSenderId: "1087471527921",
+    appId: "1:1087471527921:web:9fe8d3e2a4bf78bc5d4650",
+    measurementId: "G-V54VKM906H"
   };
 
-  const app = firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
+  // Inicializa Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
   const storage = firebase.storage();
-
-  // Elementos DOM
-  const loginPanel = document.getElementById('login-panel');
-  const chatPanel = document.getElementById('chat-panel');
-  const inputUsername = document.getElementById('username');
-  const selectRole = document.getElementById('user-role');
-  const btnLogin = document.getElementById('btn-login');
-  const messagesDiv = document.getElementById('messages');
-  const form = document.getElementById('form');
-  const inputMessage = document.getElementById('input-message');
-  const sendBtn = document.getElementById('send-btn');
-  const usersListDiv = document.getElementById('users-list');
-
-  const adminPanel = document.getElementById('admin-panel');
-  const adminUsersList = document.getElementById('admin-users-list');
-
-  const fileButton = document.getElementById('file-button');
-  const fileInput = document.getElementById('file-input');
-
-  // Private chat elements
-  const privateChatDiv = document.getElementById('private-chat');
-  const privateChatHeader = document.getElementById('private-chat-username');
-  const privateMessagesDiv = document.getElementById('private-messages');
-  const privateForm = document.getElementById('private-form');
-  const inputPrivateMessage = document.getElementById('input-private-message');
-  const sendPrivateBtn = document.getElementById('send-private-btn');
-  const filePrivateButton = document.getElementById('file-private-button');
-  const filePrivateInput = document.getElementById('file-private-input');
 
   let currentUser = null;
   let currentUserId = null;
-  let currentUserRole = 'user';
-  let currentPrivateChatUser = null;
 
-  // Função para escapar texto HTML
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.innerText = text;
-    return div.innerHTML;
-  }
+  const loginArea = document.getElementById('loginArea');
+  const chatArea = document.getElementById('chatArea');
+  const usersOnlineDiv = document.getElementById('usersOnline');
+  const messagesDiv = document.getElementById('messages');
 
-  // Formato de data HH:mm
-  function formatTimestamp(ts) {
-    const date = new Date(ts);
-    return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-  }
+  // Login simples
+  document.getElementById('btnLogin').onclick = () => {
+    const username = document.getElementById('usernameInput').value.trim();
+    if (!username) {
+      alert('Digite seu nome para entrar');
+      return;
+    }
+    currentUser = username;
+    currentUserId = 'user_' + Math.random().toString(36).substr(2,9);
 
-  // Adiciona mensagens ao DOM (público)
-  function addMessageToDOM(data) {
-    const msg = data.val();
-    if (!msg || !msg.username || !msg.text) return;
-    if (msg.banned) return; // não mostra mensagem de usuários banidos
-    // Não mostrar mensagens de usuário banido (ban status em user)
-    if (msg.username === currentUser) return;
-    if(msg.type === 'private') return; // pular mensagens privadas (renderizadas separadamente)
+    // Salva usuário online no Realtime Database
+    db.ref('users/' + currentUserId).set({ username: currentUser, online: true });
 
-    const msgEl = document.createElement('div');
-    const isSelf = msg.username === currentUser;
-    msgEl.classList.add('message');
-    msgEl.classList.add(isSelf ? 'self' : 'other');
-    msgEl.title = formatTimestamp(msg.timestamp) + ' - ' + msg.username;
+    // Remove usuário ao sair ou fechar aba
+    window.addEventListener('beforeunload', () => {
+      db.ref('users/' + currentUserId).remove();
+    });
 
-    if(msg.imgUrl) {
-      msgEl.innerHTML = `<div class="username">${escapeHtml(msg.username)}</div><img src="${msg.imgUrl}" alt="Foto enviada" />`;
-      if(msg.text.trim()){
-        msgEl.innerHTML += `<div>${escapeHtml(msg.text)}</div>`;
-      }
-    } else {
-      msgEl.innerHTML = `<div class="username">${escapeHtml(msg.username)}</div>${escapeHtml(msg.text)}`;
+    loginArea.style.display = 'none';
+    chatArea.style.display = 'block';
+
+    listenUsers();
+    listenMessages();
+  };
+
+  // Logout
+  document.getElementById('btnLogout').onclick = () => {
+    if(currentUserId) {
+      db.ref('users/' + currentUserId).remove();
+    }
+    currentUser = null;
+    currentUserId = null;
+    messagesDiv.innerHTML = '';
+    usersOnlineDiv.textContent = 'Usuários online: 0';
+    chatArea.style.display = 'none';
+    loginArea.style.display = 'block';
+  };
+
+  // Enviar mensagem
+  document.getElementById('btnSend').onclick = () => {
+    const text = document.getElementById('messageInput').value.trim();
+    const imageFile = document.getElementById('imageInput').files[0];
+
+    if(!text && !imageFile) {
+      alert('Digite uma mensagem ou selecione uma imagem');
+      return;
     }
 
-    messagesDiv.appendChild(msgEl);
+    if(imageFile) {
+      // Upload imagem primeiro
+      const path = 'images/' + currentUserId + '_' + Date.now() + '_' + imageFile.name;
+      const uploadTask = storage.ref(path).put(imageFile);
+
+      uploadTask.on('state_changed', null, (error) => {
+        alert('Erro no upload: ' + error.message);
+      }, () => {
+        uploadTask.snapshot.ref.getDownloadURL().then((url) => {
+          sendMessage(text, url);
+        });
+      });
+    } else {
+      sendMessage(text, null);
+    }
+
+    // Limpar campos
+    document.getElementById('messageInput').value = '';
+    document.getElementById('imageInput').value = '';
+  };
+
+  function sendMessage(text, imageUrl) {
+    const msgRef = db.ref('messages');
+    msgRef.push({
+      senderId: currentUserId,
+      senderName: currentUser,
+      text: text || '',
+      imageUrl: imageUrl || null,
+      timestamp: Date.now()
+    });
+  }
+
+  function listenMessages() {
+    const msgRef = db.ref('messages');
+    msgRef.off(); // Limpa listeners anteriores
+    msgRef.on('child_added', snapshot => {
+      const msg = snapshot.val();
+      displayMessage(msg);
+    });
+  }
+
+  function displayMessage(msg) {
+    const div = document.createElement('div');
+    div.classList.add('message');
+
+    let content = `<strong>${msg.senderName}:</strong> ${msg.text || ''}`;
+    if(msg.imageUrl){
+      content += `<br/><img src="${msg.imageUrl}" alt="imagem enviada" />`;
+    }
+    div.innerHTML = content;
+    messagesDiv.appendChild(div);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
 
-  // Renderiza lista de usuários no painel lateral
-  function renderUsersList(users) {
-    usersListDiv.innerHTML = '<h3>Usuários</h3>';
-    Object.entries(users).forEach(([uid, user]) => {
-      const userItem = document.createElement('div');
-      userItem.classList.add('user-item');
-      if(user.banned) userItem.classList.add('banned');
-      if(uid===currentUserId) userItem.classList.add('self');
-      userItem.textContent = user.username + (user.banned ? ' (banido)' : '');
-      userItem.title = user.username + (user.banned ? ' - Banido' : '') + (user.role ? ' - ' + user.role : '');
-
-      userItem.addEventListener('click', () => {
-        if(uid === currentUserId) return; // não iniciar chat comigo mesmo
-        openPrivateChat(uid, user.username);
-      });
-      usersListDiv.appendChild(userItem);
+  function listenUsers() {
+    const usersRef = db.ref('users');
+    usersRef.on('value', snapshot => {
+      const users = snapshot.val();
+      let count = 0;
+      if(users) {
+        count = Object.keys(users).length;
+      }
+      usersOnlineDiv.textContent = `Usuários online: ${count}`;
     });
   }
-
-  // Função para abrir chat privado
-  function openPrivateChat(uid, username) {
-    currentPrivateChatUser = {uid, username};
-    privateChatHeader.textContent = 'Chat privado com ' + username;
-    privateMessagesDiv.innerHTML = '';
-    privateChatDiv.style.display = 'flex';
-    fetchPrivateMessages(uid);
-  }
-
-  // Função para adicionar mensagem privada ao DOM
-  function addPrivateMessageToDOM(data) {
-    const msg = data.val();
-    if (!msg) return;
-    if (!msg.text && !msg.imgUrl) return;
-
-    const msgEl = document.createElement('div');
-    const isSelf = msg.from === currentUserId;
-    msgEl.classList.add('message');
-    msgEl.classList.add(isSelf ? 'self' : 'other');
-    msgEl.title = formatTimestamp(msg.timestamp) + ' - ' + (isSelf ? 'Você' : currentPrivateChatUser.username);
-
-    if(msg.imgUrl) {
-      msgEl.innerHTML = `<img src="${msg.imgUrl}" alt="Foto enviada" />`;
-      if(msg.text.trim()){
-        msgEl.innerHTML += `<div>${escapeHtml(msg.text)}</div>`;
-      }
-    } else {
-      msgEl.innerHTML = escapeHtml(msg.text);
-    }
-
-    privateMessagesDiv.appendChild(msgEl);
-    privateMessagesDiv.scrollTop = privateMessagesDiv.scrollHeight;
-  }
-
-  // Fetch mensagens privadas entre currentUserId e uid
-  function fetchPrivateMessages(uid2) {
-    const chatId = [currentUserId, uid2].sort().join('_');
-    const ref = database.ref('privateMessages/' + chatId).limitToLast(100);
-    ref.off();
-    ref.on('child_added', addPrivateMessageToDOM);
-  }
-
-  // Envia mensagem pública
-  async function sendMessage(text, imgUrl) {
-    if(!text && !imgUrl) return;
-    // Verifica se o usuário está banido
-    const userSnapshot = await database.ref('users/' + currentUserId).get();
-    if(userSnapshot.exists() && userSnapshot.val().banned){
-      alert('Você está banido e não pode enviar mensagens.');
-      return;
-    }
-    const msgData = {
-      username: currentUser,
-      userId: currentUserId,
-      text: text || '',
-      timestamp: Date.now(),
-      imgUrl: imgUrl || '',
-      type: 'public'
-    };
-    await database.ref('messages').push(msgData);
-  }
-
-  // Envia mensagem privada
-  async function sendPrivateMessage(text, imgUrl) {
-    if(!text && !imgUrl) return;
-    const chatId = [currentUserId, currentPrivateChatUser.uid].sort().join('_');
-    const msgData = {
-      from: currentUserId,
-      to: currentPrivateChatUser.uid,
-      text: text || '',
-      timestamp: Date.now(),
-      imgUrl: imgUrl || '',
-      type: 'private'
-    };
-    await database.ref('privateMessages/' + chatId).push(msgData);
-  }
-
-  // Renderiza painel admin com lista de usuários e botões para ban/unban
-  function renderAdminPanel(users) {
-    if(currentUserRole !== 'moderator'){
-      adminPanel.style.display = 'none';
-      return;
-    }
-    adminPanel.style.display = 'block';
-    adminUsersList.innerHTML = '';
-    Object.entries(users).forEach(([uid, user]) => {
-      if(uid === currentUserId) return; // não mostrar eu mesmo no painel admin
-
-      const userDiv = document.createElement('div');
-      userDiv.textContent = user.username + (user.banned ? ' (banido)' : '');
-      userDiv.style.display = 'flex';
-      userDiv.style.alignItems = 'center';
-      userDiv.style.justifyContent = 'space-between';
-      userDiv.style.margin = '6px 0';
-
-      const btn = document.createElement('button');
-      if(user.banned){
-        btn.textContent = 'Desbanir';
-        btn.className = 'unban-btn';
-        btn.onclick = () => unbanUser(uid);
-      } else {
-        btn.textContent = 'Banir';
-        btn.className = 'ban-btn';
-        btn.onclick = () => banUser(uid);
-      }
-      userDiv.appendChild(btn);
-      adminUsersList.appendChild(userDiv);
-    });
-  }
-
-  async function banUser(uid){
-    await database.ref('users/' + uid).update({banned: true});
-  }
-  async function unbanUser(uid){
-    await database.ref('users/' + uid).update({banned: false});
-  }
-
-  // Atualiza lista de usuários e painel admin ao vivo
-  function setupUsersListener(){
-    database.ref('users').on('value', snapshot => {
-      const users = snapshot.val() || {};
-      renderUsersList(users);
-      renderAdminPanel(users);
-    });
-  }
-
-  // Listener mensagens públicas
-  function listenForMessages(){
-    const msgsRef = database.ref('messages').limitToLast(100);
-    msgsRef.off();
-    msgsRef.on('child_added', addMessageToDOM);
-  }
-
-  // Manipulação do login
-  btnLogin.onclick = async () => {
-    let name = inputUsername.value.trim();
-    let role = selectRole.value;
-
-    if(!name){
-      alert('Por favor, digite um nome de usuário válido.');
-      return;
-    }
-    currentUser = name;
-    currentUserRole = role;
-
-    // Cria ou atualiza usuário no DB
-    const usersRef = database.ref('users');
-    const snapshot = await usersRef.orderByChild('username').equalTo(name).once('value');
-    if(snapshot.exists()){
-      // Busca UID do usuário já cadastrado
-      const foundUser = Object.entries(snapshot.val())[0];
-      currentUserId = foundUser[0];
-      // Atualiza role e nome para garantir consistência
-      await database.ref('users/' + currentUserId).update({username: name, role});
-    } else {
-      // Cria novo usuário
-      const newUserRef = usersRef.push();
-      currentUserId = newUserRef.key;
-      await newUserRef.set({username: name, role, banned: false});
-    }
-
-    inputUsername.disabled = true;
-    selectRole.disabled = true;
-    btnLogin.disabled = true;
-
-    loginPanel.style.display = 'none';
-    chatPanel.style.display = 'flex';
-
-    listenForMessages();
-    setupUsersListener();
-
-    inputMessage.focus();
-  };
-
-  // Ativa botão enviar na mensagem pública
-  inputMessage.addEventListener('input', () => {
-    sendBtn.disabled = inputMessage.value.trim().length === 0 && !fileInput.files.length;
-  });
-
-  // Enviar mensagem pública
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const text = inputMessage.value.trim();
-    if(!text && fileInput.files.length === 0) return;
-
-    if(fileInput.files.length){
-      const file = fileInput.files[0];
-      sendBtn.disabled = true;
-      try {
-        const imgUrl = await uploadImage(file);
-        await sendMessage(text, imgUrl);
-      } catch(err){
-        alert('Erro ao enviar imagem: ' + err.message);
-      }
-      fileInput.value = '';
-    } else {
-      await sendMessage(text, '');
-    }
-    inputMessage.value = '';
-    sendBtn.disabled = true;
-  });
-
-  // Upload imagem para Firebase Storage
-  async function uploadImage(file){
-    const ext = file.name.split('.').pop();
-    const filename = currentUserId + '_' + Date.now() + '.' + ext;
-    const storageRef = storage.ref('chat-images/' + filename);
-    const snapshot = await storageRef.put(file);
-    return await snapshot.ref.getDownloadURL();
-  }
-
-  // Botão selecione foto pública
-  fileButton.addEventListener('click', () => {
-    fileInput.click();
-  });
-
-  // Quando seleciona foto pública ativa botão enviar
-  fileInput.addEventListener('change', () => {
-    sendBtn.disabled = (inputMessage.value.trim().length === 0 && fileInput.files.length === 0);
-  });
-
-  // --- Mensagens privadas ---
-
-  // Ativa botão enviar chat privado
-  inputPrivateMessage.addEventListener('input', () => {
-    sendPrivateBtn.disabled = inputPrivateMessage.value.trim().length === 0 && filePrivateInput.files.length === 0;
-  });
-
-  // Botão enviar foto privada
-  filePrivateButton.addEventListener('click', () => {
-    filePrivateInput.click();
-  });
-
-  filePrivateInput.addEventListener('change', () => {
-    sendPrivateBtn.disabled = (inputPrivateMessage.value.trim().length === 0 && filePrivateInput.files.length === 0);
-  });
-
-  // Envio mensagem privada
-  privateForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if(!currentPrivateChatUser){
-      alert('Nenhum usuário selecionado para chat privado.');
-      return;
-    }
-    const text = inputPrivateMessage.value.trim();
-    if(!text && filePrivateInput.files.length === 0) return;
-
-    if(filePrivateInput.files.length){
-      const file = filePrivateInput.files[0];
-      sendPrivateBtn.disabled = true;
-      try {
-        const imgUrl = await uploadImage(file);
-        await sendPrivateMessage(text, imgUrl);
-      } catch(err) {
-        alert('Erro ao enviar imagem: ' + err.message);
-      }
-      filePrivateInput.value = '';
-    } else {
-      await sendPrivateMessage(text, '');
-    }
-    inputPrivateMessage.value = '';
-    sendPrivateBtn.disabled = true;
-  });
-
 </script>
+
 </body>
 </html>
-
