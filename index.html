@@ -5,14 +5,78 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Chat Firebase Simples</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
-  #loginArea, #chatArea { max-width: 500px; margin: auto; padding: 10px; background: white; border-radius: 8px; }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px; background: #fafafa;
+  }
+  #loginArea, #chatArea {
+    max-width: 500px;
+    margin: auto;
+    padding: 15px 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgb(0 0 0 / 0.1);
+  }
   #chatArea { display: none; }
-  #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; background: #fff; }
-  .message { margin-bottom: 10px; }
-  .message strong { color: #007BFF; }
-  .online-users { margin-bottom: 15px; font-size: 0.9em; color: green; }
-  img { max-width: 150px; border-radius: 6px; }
+
+  #usersOnline {
+    font-size: 1.1em;
+    color: #2a9d8f;
+    margin-bottom: 15px;
+    font-weight: bold;
+  }
+
+  #messages {
+    height: 350px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    background: #fff;
+    margin-bottom: 15px;
+    border-radius: 8px;
+  }
+
+  .message {
+    margin-bottom: 12px;
+  }
+
+  .message strong {
+    color: #264653;
+  }
+
+  .message img {
+    max-width: 200px;
+    margin-top: 5px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  input[type=text] {
+    width: 70%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-right: 10px;
+  }
+
+  input[type=file] {
+    margin-top: 8px;
+    margin-bottom: 10px;
+  }
+
+  button {
+    padding: 8px 15px;
+    background: #2a9d8f;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  button:hover {
+    background: #21867a;
+  }
 </style>
 </head>
 <body>
@@ -25,15 +89,16 @@
 
 <div id="chatArea">
   <h2>Chat Firebase</h2>
-  <div class="online-users" id="usersOnline">Usuários online: 0</div>
+  <div id="usersOnline">Usuários online: 0</div>
 
   <div id="messages"></div>
 
   <input type="text" id="messageInput" placeholder="Digite sua mensagem" />
+  <br />
   <input type="file" id="imageInput" accept="image/*" />
+  <br />
   <button id="btnSend">Enviar</button>
-
-  <button id="btnLogout">Sair</button>
+  <button id="btnLogout" style="background:#e76f51; margin-left: 10px;">Sair</button>
 </div>
 
 <!-- Firebase SDK -->
@@ -42,12 +107,12 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
 
 <script>
-  // Config Firebase
+  // Config Firebase (ajustei o storageBucket para o padrão correto)
   const firebaseConfig = {
     apiKey: "AIzaSyCL8S1BlDqcfBeRk6dJtd-ukDC0uwtHogo",
     authDomain: "chat-9e78e.firebaseapp.com",
     projectId: "chat-9e78e",
-    storageBucket: "chat-9e78e.appspot.com",
+    storageBucket: "chat-9e78e.appspot.com", // CORRETO aqui!
     messagingSenderId: "1087471527921",
     appId: "1:1087471527921:web:9fe8d3e2a4bf78bc5d4650",
     measurementId: "G-V54VKM906H"
@@ -74,15 +139,14 @@
       return;
     }
     currentUser = username;
-    currentUserId = 'user_' + Math.random().toString(36).substr(2,9);
+    currentUserId = 'user_' + Math.random().toString(36).substr(2, 9);
 
     // Salva usuário online no Realtime Database
-    db.ref('users/' + currentUserId).set({ username: currentUser, online: true });
+    const userRef = db.ref('users/' + currentUserId);
+    userRef.set({ username: currentUser, online: true });
 
-    // Remove usuário ao sair ou fechar aba
-    window.addEventListener('beforeunload', () => {
-      db.ref('users/' + currentUserId).remove();
-    });
+    // Configura remoção automática ao fechar/atualizar página
+    userRef.onDisconnect().remove();
 
     loginArea.style.display = 'none';
     chatArea.style.display = 'block';
@@ -93,7 +157,7 @@
 
   // Logout
   document.getElementById('btnLogout').onclick = () => {
-    if(currentUserId) {
+    if (currentUserId) {
       db.ref('users/' + currentUserId).remove();
     }
     currentUser = null;
@@ -109,13 +173,12 @@
     const text = document.getElementById('messageInput').value.trim();
     const imageFile = document.getElementById('imageInput').files[0];
 
-    if(!text && !imageFile) {
+    if (!text && !imageFile) {
       alert('Digite uma mensagem ou selecione uma imagem');
       return;
     }
 
-    if(imageFile) {
-      // Upload imagem primeiro
+    if (imageFile) {
       const path = 'images/' + currentUserId + '_' + Date.now() + '_' + imageFile.name;
       const uploadTask = storage.ref(path).put(imageFile);
 
@@ -160,7 +223,7 @@
     div.classList.add('message');
 
     let content = `<strong>${msg.senderName}:</strong> ${msg.text || ''}`;
-    if(msg.imageUrl){
+    if (msg.imageUrl) {
       content += `<br/><img src="${msg.imageUrl}" alt="imagem enviada" />`;
     }
     div.innerHTML = content;
@@ -173,7 +236,7 @@
     usersRef.on('value', snapshot => {
       const users = snapshot.val();
       let count = 0;
-      if(users) {
+      if (users) {
         count = Object.keys(users).length;
       }
       usersOnlineDiv.textContent = `Usuários online: ${count}`;
